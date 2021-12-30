@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="road.js"></script>
+    <script src="bonus.js"></script>
+    <script src="car.js"></script>
+</head>
+<body>
+<p id="score" style="position:absolute; left:850px; top:580px; color: chartreuse; font-size: 150%"></p>
+<p id="gameOver" style="position:absolute; left:390px; top:250px; color: red; font-size: 200% ; text-align: center"></p>
+
+<canvas id="myCanvas" width="1000" height="650" style="border: 1px solid"></canvas>
+<script>
+    let canvas = document.getElementById('myCanvas');
+    let ctx = canvas.getContext('2d');
+    let ratio = 480 / 950;
+    let h = 70;
+    let w = h * ratio;
+    let myCar = new Car(500, 350, w, h, 10, 'img/carO5.png', 0);
+    let ratio1 = 370 / 1200;
+    let h1 = 1300;
+    let w1 = h1 * ratio1;
+    let backGround = new Road(-100, -100, 1360, 880, 0, 'img/backgroung2.png');
+    let playButton = new Road(430, 300, 150, 150, 0, 'img/StartButton.png');
+    // playButton.drawRoad(ctx);
+    let road = new Road(300, -50, w1, h1, 10, 'img/road.png');
+    let intervalID = -1;
+    let score = 0;
+
+    function moveCar(event) {
+        switch (event.keyCode) {
+            case 37: {
+                if (myCar.x < 380) {
+                    return;
+                }
+                myCar.moveLeft()
+                break;
+            }
+            case 39: {
+                if (myCar.x + myCar.width > 630) {
+                    return;
+                }
+                myCar.moveRight()
+                break;
+            }
+            case 38: {
+                myCar.moveUp()
+                break;
+            }
+            case 40: {
+                myCar.moveDown()
+                break;
+            }
+        }
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, 1000, 800);
+    }
+
+    let arrEnemyCar = [];
+    let arrImg0 = ['img/obstaclecar/carO1.png', 'img/obstaclecar/carO2.png', 'img/obstaclecar/carO3.png'];
+    let arrImg1 = ['img/obstaclecar/carO4.png', 'img/obstaclecar/carO5.png', 'img/obstaclecar/carO6.png'];
+
+    function makeEnemyCar() {
+        let arrImg;
+        let randomDirection = Math.floor(Math.random() * 2);
+        let xI;
+        let yI;
+        if (randomDirection === 0) {
+            xI = Math.floor(Math.random() * (600 - 480)) + 480;
+            yI = canvas.clientHeight
+            arrImg = arrImg0;
+        } else {
+            xI = Math.floor(Math.random() * (510 - 380)) + 380;
+            yI = -100;
+            arrImg = arrImg1;
+        }
+        let randomImgIndex = Math.floor(Math.random() * arrImg.length);
+        let enemyCar = new Car(xI, yI, w, h, 1, arrImg [randomImgIndex], randomDirection)
+        arrEnemyCar.push(enemyCar);
+    }
+
+    function updateEnemyCar() {
+        for (let i = 0; i < arrEnemyCar.length; i++) {
+            if (arrEnemyCar [i].y > canvas.clientHeight + 300 || arrEnemyCar [i].y < -300) {
+                arrEnemyCar.splice(i, 1)
+            }
+        }
+    }
+
+    function drawEnemyCar() {
+        for (let i = 0; i < arrEnemyCar.length; i++) {
+            arrEnemyCar [i].autoMove()
+            arrEnemyCar[i].drawCar(ctx);
+        }
+    }
+
+    setInterval(makeEnemyCar, 2000)
+
+    let arrBonus = [];
+
+    function makeBonus() {
+        let xI = Math.floor(Math.random() * (600 - 480)) + 480;
+        let bonus = new Bonus(xI, -50, 25, 25, 2, 'img/gold2.png')
+        arrBonus.push(bonus);
+    }
+
+    function drawBonus() {
+        for (let i = 0; i < arrBonus.length; i++) {
+            arrBonus[i].moveDown();
+            arrBonus[i].drawBonus(ctx);
+        }
+    }
+
+    setInterval(makeBonus, 1000);
+
+    function updateBonus() {
+        for (let i = 0; i < arrBonus.length; i++) {
+            if (arrBonus [i].y > canvas.clientHeight + 300 || checkCollision(myCar, arrBonus[i])) {
+                arrBonus.splice(i, 1)
+            }
+
+        }
+    }
+
+    function plusScore() {
+        for (let i = 0; i < arrBonus.length; i++) {
+            if (checkCollision(myCar, arrBonus[i])) {
+                score += 1
+            }
+
+        }
+        document.getElementById('score').innerHTML = 'SCORE: ' + score;
+    }
+
+    function isGameOver() {
+        for (let i = 0; i < arrEnemyCar.length; i++) {
+            if (checkCollision(myCar, arrEnemyCar[i])) {
+                document.getElementById('gameOver').innerHTML = 'GAME OVER' + '<br>' + 'SCORE: ' + score;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function drawCanvas() {
+        backGround.drawRoad(ctx);
+        road.drawRoad(ctx);
+        myCar.drawCar(ctx);
+    }
+
+    function updateCanvas() {
+        clearCanvas();
+        plusScore();
+        backGround.drawRoad(ctx)
+        road.drawRoad(ctx);
+        road.moveDown();
+        updateEnemyCar();
+        updateBonus();
+        myCar.drawCar(ctx);
+        drawEnemyCar();
+        drawBonus();
+        if (isGameOver()) {
+            cancelAnimationFrame(intervalID);
+        } else {
+            requestAnimationFrame(updateCanvas);
+        }
+    }
+
+    let isPlay = false;
+
+    function playGame() {
+        isPlay = true
+        updateCanvas();
+    }
+    drawCanvas()
+    canvas.addEventListener('click', playGame);
+
+
+    // requestAnimationFrame(updateCanvas);
+    // intervalID = requestAnimationFrame(updateCanvas);
+    // intervalID=setInterval(updateCanvas, 100);
+    document.addEventListener("keydown", moveCar);
+    setInterval(drawCanvas,100)
+
+    function checkCollision(myCar, carO) {
+        if (carO.x + carO.width >= myCar.x && carO.x <= myCar.x + myCar.width &&
+            carO.y + carO.height >= myCar.y && carO.y <= myCar.y + myCar.height) {
+            return true;
+        }
+        return false
+    }
+
+
+</script>
+</body>
+</html>
