@@ -23,7 +23,7 @@
     let h1 = 1300;
     let w1 = h1 * ratio1;
     let backGround = new Road(-100, -100, 1360, 880, 0, 'img/backgroung2.png');
-    let playButton = new Road(430, 300, 150, 150, 0, 'img/StartButton.png');
+    let playButton = new Road(400, 250, 200, 80, 0, 'img/StartButton.png');
     // playButton.drawRoad(ctx);
     let road = new Road(300, -50, w1, h1, 10, 'img/road.png');
     let intervalID = -1;
@@ -69,6 +69,8 @@
         let randomDirection = Math.floor(Math.random() * 2);
         let xI;
         let yI;
+        let speed;
+
         if (randomDirection === 0) {
             xI = Math.floor(Math.random() * (600 - 480)) + 480;
             yI = canvas.clientHeight
@@ -98,7 +100,6 @@
         }
     }
 
-    setInterval(makeEnemyCar, 2000)
 
     let arrBonus = [];
 
@@ -115,7 +116,6 @@
         }
     }
 
-    setInterval(makeBonus, 1000);
 
     function updateBonus() {
         for (let i = 0; i < arrBonus.length; i++) {
@@ -136,7 +136,7 @@
         document.getElementById('score').innerHTML = 'SCORE: ' + score;
     }
 
-    function isGameOver() {
+    function checkGameOver() {
         for (let i = 0; i < arrEnemyCar.length; i++) {
             if (checkCollision(myCar, arrEnemyCar[i])) {
                 document.getElementById('gameOver').innerHTML = 'GAME OVER' + '<br>' + 'SCORE: ' + score;
@@ -146,13 +146,16 @@
         return false;
     }
 
-    function drawCanvas() {
+    function startCanvas() {
         backGround.drawRoad(ctx);
         road.drawRoad(ctx);
         myCar.drawCar(ctx);
+        playButton.drawRoad(ctx)
+        clearInterval(intervalID1);
+        clearInterval(intervalID2);
     }
 
-    function updateCanvas() {
+    function playingCanvas() {
         clearCanvas();
         plusScore();
         backGround.drawRoad(ctx)
@@ -163,28 +166,40 @@
         myCar.drawCar(ctx);
         drawEnemyCar();
         drawBonus();
-        if (isGameOver()) {
+        if (checkGameOver()) {
             cancelAnimationFrame(intervalID);
         } else {
-            requestAnimationFrame(updateCanvas);
+            intervalID = requestAnimationFrame(playingCanvas);
         }
     }
 
-    let isPlay = false;
 
+
+    let intervalID1 = setInterval(makeBonus, 1000);
+    let intervalID2 = setInterval(makeEnemyCar, 2000);
+
+    let isPlay = false;
     function playGame() {
         isPlay = true
-        updateCanvas();
+        setInterval(makeBonus, 1000)
+        setInterval(makeEnemyCar, 2000)
+        playingCanvas();
+
     }
-    drawCanvas()
-    canvas.addEventListener('click', playGame);
+    canvas.addEventListener('click', canvasClick);
+
+    function canvasClick(event) {
+        let mouseX = event.clientX;
+        let mouseY = event.clientY;
+        console.log(mouseX, mouseY);
+        if (mouseX >= 400 && mouseX <= 600 && mouseY >= 250 && mouseY <= 330 && !isPlay) {
+            playGame();
+        }
+    }
 
 
-    // requestAnimationFrame(updateCanvas);
-    // intervalID = requestAnimationFrame(updateCanvas);
-    // intervalID=setInterval(updateCanvas, 100);
     document.addEventListener("keydown", moveCar);
-    setInterval(drawCanvas,100)
+    setInterval(startCanvas,100)
 
     function checkCollision(myCar, carO) {
         if (carO.x + carO.width >= myCar.x && carO.x <= myCar.x + myCar.width &&
